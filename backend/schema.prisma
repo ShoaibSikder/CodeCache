@@ -1,0 +1,174 @@
+// This is your Prisma schema file for CodeCache
+// Connects to Supabase PostgreSQL
+
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───
+
+enum UserRole {
+  super_admin
+  admin
+  editor
+  user
+}
+
+enum ContentType {
+  heading
+  paragraph
+  code
+  table
+  note
+  warning
+  tip
+  image
+  output
+  divider
+  quiz
+  mcq
+  roadmap
+  video
+  download
+}
+
+enum Status {
+  active
+  inactive
+  draft
+  archived
+}
+
+// ─── Models ───
+
+model User {
+  id         String   @id @default(uuid()) @db.Uuid
+  username   String   @unique
+  email      String   @unique
+  first_name String   @default("")
+  last_name  String   @default("")
+  role       UserRole @default(user)
+  password   String
+  is_active  Boolean  @default(true)
+  is_staff   Boolean  @default(false)
+  last_login DateTime? @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+
+  @@map("accounts_user")
+}
+
+model Language {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String    @unique
+  slug          String    @unique
+  description   String    @default("")
+  icon          String    @default("")
+  color         String    @default("#4a4a8a")
+  status        Status    @default(active)
+  display_order Int       @default(0)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime  @updatedAt @db.Timestamptz(6)
+
+  sections Section[]
+
+  @@map("languages_language")
+}
+
+model Section {
+  id            String   @id @default(uuid()) @db.Uuid
+  language_id   String   @db.Uuid
+  title         String
+  slug          String
+  description   String   @default("")
+  display_order Int      @default(0)
+  status        Status   @default(active)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @updatedAt @db.Timestamptz(6)
+
+  language     Language       @relation(fields: [language_id], references: [id], onDelete: Cascade)
+  subsections  Subsection[]
+
+  @@unique([language_id, slug])
+  @@map("content_section")
+}
+
+model Subsection {
+  id            String   @id @default(uuid()) @db.Uuid
+  section_id    String   @db.Uuid
+  title         String
+  slug          String
+  description   String   @default("")
+  display_order Int      @default(0)
+  status        Status   @default(active)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @updatedAt @db.Timestamptz(6)
+
+  section      Section       @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  content_items ContentItem[]
+
+  @@unique([section_id, slug])
+  @@map("content_subsection")
+}
+
+model ContentItem {
+  id            String      @id @default(uuid()) @db.Uuid
+  subsection_id String      @db.Uuid
+  type          ContentType
+  data          Json        @default("{}")
+  display_order Int         @default(0)
+  status        Status      @default(active)
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime    @updatedAt @db.Timestamptz(6)
+
+  subsection Subsection @relation(fields: [subsection_id], references: [id], onDelete: Cascade)
+
+  @@map("content_contentitem")
+}
+
+model CodeExecution {
+  id            String   @id @default(uuid()) @db.Uuid
+  language      String
+  code          String   @default("")
+  status        String   @default("submitted")
+  output        String   @default("")
+  error         String   @default("")
+  execution_time String?
+  memory_used    String?
+  judge0_token   String   @default("")
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("playground_codeexecution")
+}
+
+model PageView {
+  id              String   @id @default(uuid()) @db.Uuid
+  language_id     String?  @db.Uuid
+  section_id      String?  @db.Uuid
+  subsection_id   String?  @db.Uuid
+  path            String   @default("")
+  referrer        String   @default("")
+  ip_address      String   @default("")
+  user_agent      String   @default("")
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("analytics_pageview")
+}
+
+model SearchQuery {
+  id             String   @id @default(uuid()) @db.Uuid
+  query          String
+  results_count  Int      @default(0)
+  ip_address     String   @default("")
+  user_agent     String   @default("")
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("analytics_searchquery")
+}
