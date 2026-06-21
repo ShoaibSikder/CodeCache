@@ -1,0 +1,68 @@
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+.Python
+env/
+venv/
+.venv/
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ─── Django ───
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+*.pot
+*.mo
+local_settings.py
+
+# ─── Environment ───
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ─── Node / Frontend ───
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# ─── IDE & Editors ───
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ─── Prisma ───
+node_modules/
+.prisma/
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# ─── Misc ───
+*.tmp
+*.temp
+.cache/
+coverage/
+htmlcov/
+.coverage
+.tox/
+.mypy_cache/
+.ruff_cache/
