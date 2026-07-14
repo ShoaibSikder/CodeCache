@@ -103,6 +103,79 @@ def ai_code_doctor(request):
         }, status=500)
 
 
+@csrf_exempt
+def ai_generate_quiz(request):
+    """
+    POST /api/v1/ai/generate-quiz/
+    Generate multiple-choice quiz questions using Groq API.
+    """
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'error': {'code': 405, 'message': 'Method not allowed. Use POST.'},
+            'data': None
+        }, status=405)
+
+    try:
+        body = json.loads(request.body)
+        language = body.get('language', 'programming').strip() or 'programming'
+        topic = body.get('topic', '').strip()
+
+        groq_api_key = os.getenv('GROQ_API_KEY', '')
+        if not groq_api_key:
+            return JsonResponse({
+                'success': False,
+                'error': {'code': 500, 'message': 'AI service is not configured.'},
+                'data': None
+            }, status=500)
+
+        client = Groq(api_key=groq_api_key)
+        topic_text = f" Topic focus: {topic}." if topic else ""
+        prompt = (
+            f"Generate 4 beginner-friendly multiple-choice quiz questions for {language}."
+            f"{topic_text} Return only valid JSON with this shape: "
+            '{"questions":[{"question":"...","options":["...","...","...","..."],'
+            '"correctIndex":0,"explanation":"..."}]}. '
+            "Use exactly four options per question. correctIndex must be 0, 1, 2, or 3."
+        )
+
+        completion = client.chat.completions.create(
+            model=os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+            messages=[
+                {'role': 'system', 'content': 'You generate concise valid JSON only.'},
+                {'role': 'user', 'content': prompt}
+            ],
+            temperature=0.5,
+            max_tokens=1600,
+            response_format={'type': 'json_object'},
+        )
+
+        content = completion.choices[0].message.content
+        payload = json.loads(content)
+        questions = payload.get('questions', [])
+
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'questions': questions,
+                'language': language,
+            }
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': {'code': 400, 'message': 'Invalid JSON body or AI response.'},
+            'data': None
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': {'code': 500, 'message': 'AI quiz generation failed.', 'details': str(e)},
+            'data': None
+        }, status=500)
+
+
 urlpatterns = [
     path('', health_check),
     path('warmup/', warmup),
@@ -117,6 +190,7 @@ urlpatterns = [
     path('api/v1/analytics/', include('apps.analytics.urls')),
     path('api/v1/playground/', include('apps.playground.urls')),
     path('api/v1/ai/code-doctor/', ai_code_doctor, name='ai-code-doctor'),
+    path('api/v1/ai/generate-quiz/', ai_generate_quiz, name='ai-generate-quiz'),
 ]
 
 if settings.DEBUG:
