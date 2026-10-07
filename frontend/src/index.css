@@ -260,6 +260,7 @@
   html:not(.dark) .language-page .bg-card.rounded-md:hover,
   html:not(.dark) .language-page .code-snippet-card:hover,
   html:not(.dark) .language-page .topic-index-card:hover,
+  html:not(.dark) .language-page .learning-card:hover,
   html:not(.dark) .language-page .ai-doctor-card:hover {
     transform: none !important;
     box-shadow: var(--shadow-primary) !important;
@@ -272,6 +273,7 @@
   .dark .language-page .bg-card.rounded-md:hover,
   .dark .language-page .code-snippet-card:hover,
   .dark .language-page .topic-index-card:hover,
+  .dark .language-page .learning-card:hover,
   .dark .language-page .ai-doctor-card:hover {
     transform: none !important;
     box-shadow: var(--shadow-primary) !important;
@@ -362,7 +364,8 @@
   }
 
   html:not(.dark) header button,
-  html:not(.dark) header a[href="/admin"] {
+  html:not(.dark) header a[href="/admin"],
+  html:not(.dark) header .auth-login-button {
     border: 2.5px solid var(--line);
     box-shadow: 3px 3px 0 #18181b;
     background: var(--card);
@@ -374,7 +377,8 @@
   }
 
   html:not(.dark) header button:hover,
-  html:not(.dark) header a[href="/admin"]:hover {
+  html:not(.dark) header a[href="/admin"]:hover,
+  html:not(.dark) header .auth-login-button:hover {
     transform: translate(1px, 1px);
     box-shadow: 2px 2px 0 #18181b;
     background: #ffffff;
@@ -402,7 +406,8 @@
   }
 
   .dark header button,
-  .dark header a[href="/admin"] {
+  .dark header a[href="/admin"],
+  .dark header .auth-login-button {
     background: #21262d !important;
     border: 2px solid #30363d !important;
     box-shadow: 3px 3px 0 rgba(1, 4, 9, 0.72) !important;
@@ -414,7 +419,8 @@
   }
 
   .dark header button:hover,
-  .dark header a[href="/admin"]:hover {
+  .dark header a[href="/admin"]:hover,
+  .dark header .auth-login-button:hover {
     background: #343942 !important;
     transform: translate(1px, 1px);
     box-shadow: 2px 2px 0 rgba(1, 4, 9, 0.72) !important;
@@ -444,6 +450,7 @@
   .dark .code-snippet-card,
   .dark .topic-index-card,
   .dark .ai-doctor-card,
+  .dark .learning-card,
   .dark .search-result-card,
   .dark .admin-panel-card {
     background: #21262d !important;
@@ -494,9 +501,87 @@
   html:not(.dark) .code-snippet-card,
   html:not(.dark) .topic-index-card,
   html:not(.dark) .ai-doctor-card,
+  html:not(.dark) .learning-card,
   html:not(.dark) .search-result-card,
   html:not(.dark) .admin-panel-card {
     background: #fafafa !important;
+  }
+
+  .learning-card {
+    border: 3px solid var(--line);
+    box-shadow: var(--shadow-primary);
+    border-radius: var(--radius-xl);
+  }
+
+  .learning-card:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-primary) !important;
+  }
+
+  .difficulty-pill,
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    padding: 0.125rem 0.5rem;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.2;
+    box-shadow: 2px 2px 0 var(--line);
+  }
+
+  .difficulty-easy {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .difficulty-mid {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .difficulty-hard {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .badge-pill {
+    background: #dbeafe;
+    color: #1e3a8a;
+  }
+
+  .dark .learning-card {
+    border-width: 2px;
+    box-shadow: var(--shadow-primary);
+  }
+
+  .dark .difficulty-pill,
+  .dark .badge-pill {
+    border-color: #30363d;
+    box-shadow: 2px 2px 0 rgba(1, 4, 9, 0.72);
+  }
+
+  .dark .difficulty-easy {
+    background: #12351f;
+    color: #7ee787;
+  }
+
+  .dark .difficulty-mid {
+    background: #3b2f14;
+    color: #f2cc60;
+  }
+
+  .dark .difficulty-hard {
+    background: #3b1d21;
+    color: #ffb3ad;
+  }
+
+  .dark .badge-pill {
+    background: #1f2d3d;
+    color: #58a6ff;
   }
 
   html:not(.dark) .code-card-header,
@@ -682,6 +767,7 @@ pre::-webkit-scrollbar-thumb:hover {
   .code-snippet-card,
   .topic-index-card,
   .ai-doctor-card,
+  .learning-card,
   .language-head-card {
     box-shadow: 4px 4px 0 var(--line) !important;
   }
@@ -692,6 +778,7 @@ pre::-webkit-scrollbar-thumb:hover {
   .dark .code-snippet-card,
   .dark .topic-index-card,
   .dark .ai-doctor-card,
+  .dark .learning-card,
   .dark .language-head-card {
     box-shadow: 4px 4px 0 rgba(1, 4, 9, 0.72) !important;
   }
@@ -702,12 +789,14 @@ pre::-webkit-scrollbar-thumb:hover {
   }
 
   .language-page .topic-index-card,
+  .language-page .learning-card,
   .language-page .ai-doctor-card {
     height: min(650px, calc(100vh - 7rem));
     max-height: 100%;
   }
 
   .language-page .fixed .topic-index-card,
+  .language-page .fixed .learning-card,
   .language-page .fixed .ai-doctor-card {
     height: 100%;
     box-shadow: none !important;
@@ -723,6 +812,82 @@ pre::-webkit-scrollbar-thumb:hover {
     overflow-x: auto;
     justify-content: flex-start;
   }
+}
+
+/* Desktop language workspace: quiet rails on the page background, with independent scrolling. */
+@media (min-width: 1024px) {
+  .language-page .language-workspace {
+    align-items: start;
+  }
+
+  .language-page .desktop-side-rail {
+    overflow: visible;
+  }
+
+  .language-page .desktop-side-rail .topic-index-card,
+  .language-page .desktop-side-rail .ai-doctor-card {
+    height: 650px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow-x: hidden !important;
+  }
+
+  .language-page .desktop-side-rail .topic-index-card:hover,
+  .language-page .desktop-side-rail .ai-doctor-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .language-page .desktop-side-rail .topic-index-header,
+  .language-page .desktop-side-rail .ai-doctor-card > :first-child {
+    background: transparent !important;
+    border-color: var(--border) !important;
+  }
+
+  .language-page .desktop-side-rail .ai-doctor-card > .min-h-0 {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .language-page .desktop-side-rail:first-child .topic-index-card > .min-h-0 {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .language-page .desktop-side-rail .topic-index-card > .min-h-0::-webkit-scrollbar,
+  .language-page .desktop-side-rail .ai-doctor-card ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+}
+
+.language-page .topic-index-card,
+.language-page .ai-doctor-card,
+.language-page .topic-index-card:hover,
+.language-page .ai-doctor-card:hover,
+.language-page .topic-index-card:focus-within,
+.language-page .ai-doctor-card:focus-within,
+.dark .language-page .topic-index-card:hover,
+.dark .language-page .ai-doctor-card:hover,
+html:not(.dark) .language-page .topic-index-card:hover,
+html:not(.dark) .language-page .ai-doctor-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.language-page .desktop-side-rail .topic-index-card,
+.language-page .desktop-side-rail .ai-doctor-card,
+.language-page .desktop-side-rail .topic-index-card:hover,
+.language-page .desktop-side-rail .ai-doctor-card:hover,
+.language-page .desktop-side-rail .topic-index-card:focus-within,
+.language-page .desktop-side-rail .ai-doctor-card:focus-within {
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 @media (max-width: 420px) {

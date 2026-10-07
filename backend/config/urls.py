@@ -189,6 +189,7 @@ urlpatterns = [
     path('api/v1/search/', include('apps.search.urls')),
     path('api/v1/analytics/', include('apps.analytics.urls')),
     path('api/v1/playground/', include('apps.playground.urls')),
+    path('api/v1/learning/', include('apps.learning.urls')),
     path('api/v1/ai/code-doctor/', ai_code_doctor, name='ai-code-doctor'),
     path('api/v1/ai/generate-quiz/', ai_generate_quiz, name='ai-generate-quiz'),
 ]

@@ -144,4 +144,17 @@ export const aiAPI = {
     api.post('/ai/generate-quiz/', { language, topic }),
 };
 
+export const learningAPI = {
+  overview: () => api.get('/learning/overview/'),
+  completeTopic: (subsectionId) => api.post(`/learning/topics/${subsectionId}/complete/`),
+  saved: () => api.get('/learning/saved/'),
+  toggleSaved: (contentItemId) => api.post('/learning/saved/', { content_item_id: contentItemId }),
+  note: (languageSlug) => api.get(`/learning/notes/${languageSlug}/`),
+  saveNote: (languageSlug, body) => api.put(`/learning/notes/${languageSlug}/`, { body }),
+  recordActivity: (kind, actionKey, languageSlug) =>
+    api.post('/learning/activities/', { kind, action_key: actionKey, language_slug: languageSlug }),
+  setLastLanguage: (languageSlug) =>
+    api.put('/learning/last-language/', { language_slug: languageSlug }),
+};
+
 export default api;

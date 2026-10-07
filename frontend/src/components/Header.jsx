@@ -11,6 +11,10 @@ import {
   LogOut,
   Shield,
   User,
+  LogIn,
+  Route,
+  Bookmark,
+  ChevronDown,
 } from "lucide-react";
 import { Input } from "./ui/input";
 import { AuthContext } from "../App";
@@ -43,8 +47,10 @@ export default function Header() {
   const [paletteLoading, setPaletteLoading] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchWrapperRef = useRef(null);
+  const profileRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { user, setUser, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -220,6 +226,9 @@ export default function Header() {
       ) {
         setPaletteOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
     }
     document.addEventListener("click", onDoc);
     return () => document.removeEventListener("click", onDoc);
@@ -229,9 +238,11 @@ export default function Header() {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     setUser(null);
+    setProfileOpen(false);
     toast.success("Logged out successfully");
     navigate("/");
   };
+
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
@@ -366,8 +377,70 @@ export default function Header() {
               )}
             </button>
 
+            {user ? (
+              <div ref={profileRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen((open) => !open)}
+                  className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-2 transition-colors hover:bg-muted/80"
+                  title="Profile menu"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden md:inline max-w-28 truncate text-sm font-bold">
+                    {user.username}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                {profileOpen ? (
+                  <div className="absolute right-0 mt-2 w-56 rounded-lg border-[3px] border-border bg-popover p-2 shadow-lg z-50">
+                    <Link
+                      to="/learning-path"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold hover:bg-muted"
+                    >
+                      <Route className="h-4 w-4" />
+                      Learning Path
+                    </Link>
+                    <Link
+                      to="/saved"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold hover:bg-muted"
+                    >
+                      <Bookmark className="h-4 w-4" />
+                      Saved Items
+                    </Link>
+                    {isAdmin ? (
+                      <Link
+                        to="/admin"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold hover:bg-muted"
+                      >
+                        <Shield className="h-4 w-4" />
+                        Admin
+                      </Link>
+                    ) : null}
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="auth-login-button inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-2 text-sm font-bold transition-all duration-200 hover:bg-muted"
+              >
+                <LogIn className="h-4 w-4" />
+                <span className="hidden sm:inline">Login</span>
+              </Link>
+            )}
+
             {/* Admin Link */}
-            {isAdmin && (
+            {false && isAdmin && (
               <Link
                 to="/admin"
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-muted hover:bg-primary hover:text-primary-foreground transition-colors text-sm font-bold"
@@ -378,7 +451,7 @@ export default function Header() {
             )}
 
             {/* User / Auth — only shown when logged in */}
-            {user && (
+            {false && user && (
               <div className="flex items-center gap-2">
                 <span className="hidden md:flex items-center gap-1.5 text-sm font-medium">
                   <User className="h-4 w-4" />
