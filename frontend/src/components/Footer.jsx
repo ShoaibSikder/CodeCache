@@ -94,7 +94,7 @@ export default function Footer() {
               <div>
                 <div className="text-base font-bold leading-tight">
                   <span>Code</span>
-                  <span className="text-primary">Cache</span>
+                  <span className="text-primary dark:text-red-400">Cache</span>
                 </div>
                 <div className="text-[10px] text-ink font-bold leading-none">
                   The Fastest Way to Recall Code
@@ -198,4 +198,3 @@ export default function Footer() {
     </footer>
   );
 }
-

@@ -59,40 +59,40 @@
   }
 
   .dark {
-    --background: #0d1117;
-    --foreground: #c9d1d9;
-    --card: #21262d;
-    --card-foreground: #e6edf3;
-    --popover: #21262d;
-    --popover-foreground: #e6edf3;
+    --background: #0b1120;
+    --foreground: #e2e8f0;
+    --card: #111c2d;
+    --card-foreground: #e2e8f0;
+    --popover: #111c2d;
+    --popover-foreground: #e2e8f0;
 
-    --primary: #d31611;
-    --primary-foreground: #ffffff;
-    --secondary: #343942;
-    --secondary-foreground: #c9d1d9;
-    --muted: #343942;
-    --muted-foreground: #8b949e;
-    --accent: #58a6ff;
-    --accent-foreground: #0d1117;
+    --primary: #60a5fa;
+    --primary-foreground: #0b1120;
+    --secondary: #1e293b;
+    --secondary-foreground: #e2e8f0;
+    --muted: #1e293b;
+    --muted-foreground: #a8b6c8;
+    --accent: #93c5fd;
+    --accent-foreground: #0b1120;
     --destructive: #f85149;
     --destructive-foreground: #ffffff;
-    --border: #30363d;
-    --input: #30363d;
-    --ring: #d31611;
-    --line: #30363d;
+    --border: #2b3a50;
+    --input: #2b3a50;
+    --ring: #93c5fd;
+    --line: #2b3a50;
     --border-card: var(--line);
 
-    --ink: #e6edf3;
-    --ink-soft: #c9d1d9;
-    --ink-faint: #8b949e;
+    --ink: #f1f5f9;
+    --ink-soft: #cbd5e1;
+    --ink-faint: #a8b6c8;
 
-    --shadow-primary: 8px 8px 0 rgba(1, 4, 9, 0.72);
-    --shadow-secondary: 4px 4px 0 rgba(1, 4, 9, 0.72);
+    --shadow-primary: 0 18px 38px rgba(0, 0, 0, 0.24);
+    --shadow-secondary: 0 8px 24px rgba(0, 0, 0, 0.18);
     --shadow-card: var(--shadow-secondary);
-    --shadow-primary-hover: 4px 4px 0 rgba(1, 4, 9, 0.72);
+    --shadow-primary-hover: 0 20px 42px rgba(0, 0, 0, 0.28);
     --shadow-card-hover: var(--shadow-primary-hover);
 
-    --code-bg: #0d1117;
+    --code-bg: #0b1120;
     --code-fg: #e6e7ee;
     --code-comment: #8b949e;
   }
@@ -101,13 +101,31 @@
     @apply border-border;
   }
 
+  button:not(:disabled),
+  [role="button"],
+  a[href] {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family:
-      "Inter",
+      "DM Sans",
       system-ui,
       -apple-system,
       sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Space Grotesk", "DM Sans", system-ui, sans-serif;
   }
 
   html:not(.dark) body {
@@ -118,7 +136,7 @@
   }
 
   .dark body {
-    background: #0d1117;
+    background: var(--background);
   }
 
   html {
@@ -400,18 +418,18 @@
   }
 
   .dark header {
-    background: #161b22 !important;
-    border-bottom: 2px solid #30363d !important;
+    background: var(--card) !important;
+    border-bottom: 1px solid var(--border) !important;
     backdrop-filter: none !important;
   }
 
   .dark header button,
   .dark header a[href="/admin"],
   .dark header .auth-login-button {
-    background: #21262d !important;
-    border: 2px solid #30363d !important;
-    box-shadow: 3px 3px 0 rgba(1, 4, 9, 0.72) !important;
-    color: #c9d1d9 !important;
+    background: var(--muted) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: none !important;
+    color: var(--foreground) !important;
     transition:
       transform 0.1s ease,
       box-shadow 0.1s ease,
@@ -421,28 +439,26 @@
   .dark header button:hover,
   .dark header a[href="/admin"]:hover,
   .dark header .auth-login-button:hover {
-    background: #343942 !important;
-    transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0 rgba(1, 4, 9, 0.72) !important;
+    background: color-mix(in srgb, var(--muted) 75%, white 25%) !important;
   }
 
   .dark .brand-mark {
     background: #d31611 !important;
-    border: 2px solid #30363d;
-    box-shadow: 3px 3px 0 rgba(1, 4, 9, 0.72);
+    border: 1px solid var(--border);
+    box-shadow: none;
   }
 
   .dark input,
   .dark textarea,
   .dark select {
-    background: #0d1117 !important;
-    border-color: #30363d !important;
-    color: #e6edf3 !important;
+    background: var(--background) !important;
+    border-color: var(--border) !important;
+    color: var(--foreground) !important;
   }
 
   .dark .language-head-card {
-    background: #161b22 !important;
-    border: 2px solid #30363d !important;
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
     box-shadow: var(--shadow-primary) !important;
   }
 
@@ -453,22 +469,22 @@
   .dark .learning-card,
   .dark .search-result-card,
   .dark .admin-panel-card {
-    background: #21262d !important;
+    background: var(--card) !important;
   }
 
   .dark .code-card-header,
   .dark .code-expand-button {
-    background: #21262d !important;
+    background: var(--card) !important;
   }
 
   .dark .code-expand-button:hover {
-    background: #343942 !important;
+    background: var(--muted) !important;
   }
 
   .dark .snippet-info-panel {
-    background: #161b22 !important;
-    border: 2px solid #30363d !important;
-    box-shadow: 3px 3px 0 rgba(1, 4, 9, 0.72);
+    background: var(--muted) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: none;
   }
 
   .dark .snippet-info-panel-amber svg,
@@ -560,8 +576,8 @@
 
   .dark .difficulty-pill,
   .dark .badge-pill {
-    border-color: #30363d;
-    box-shadow: 2px 2px 0 rgba(1, 4, 9, 0.72);
+    border-color: var(--border);
+    box-shadow: none;
   }
 
   .dark .difficulty-easy {
@@ -639,20 +655,19 @@
   }
 
   .dark .action-pill {
-    border: 2px solid #30363d !important;
-    box-shadow: 3px 3px 0 rgba(1, 4, 9, 0.72) !important;
-    color: #c9d1d9 !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: none !important;
+    color: var(--foreground) !important;
     font-weight: 800;
   }
 
   .dark .action-pill:hover {
-    transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0 rgba(1, 4, 9, 0.72) !important;
+    background: color-mix(in srgb, var(--muted) 75%, white 25%);
   }
 
   .dark .action-pill-neutral,
   .dark .action-pill-amber {
-    background: #343942 !important;
+    background: var(--muted) !important;
   }
 
   .dark .action-pill-green {
@@ -666,8 +681,8 @@
   }
 
   .dark .action-pill-blue {
-    background: #1f2d3d !important;
-    color: #58a6ff !important;
+    background: #1d3554 !important;
+    color: #93c5fd !important;
   }
 
   html:not(.dark) .border,

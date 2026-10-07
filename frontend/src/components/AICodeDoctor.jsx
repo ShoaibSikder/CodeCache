@@ -187,10 +187,7 @@ export default function AICodeDoctor() {
                   Analysis Result
                 </h3>
               </div>
-              <button
-                onClick={() => setResult("")}
-                className="p-1 rounded-md"
-              >
+              <button onClick={() => setResult("")} className="p-1 rounded-md">
                 <X className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </button>
             </div>

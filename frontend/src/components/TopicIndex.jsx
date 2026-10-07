@@ -19,6 +19,7 @@ export default function TopicIndex({
   };
 
   const handleSectionClick = (secId) => {
+    setExpandedSections((prev) => ({ ...prev, [secId]: true }));
     onSectionClick?.(secId);
   };
 
@@ -28,14 +29,14 @@ export default function TopicIndex({
 
   return (
     <div
-      className="topic-index-card overflow-hidden h-[650px] flex flex-col"
+      className="topic-index-card flex max-h-[calc(100vh-6rem)] min-h-80 flex-col overflow-hidden"
       style={{
         border: "2px solid var(--line)",
       }}
     >
       <div className="topic-index-header px-4 py-3 bg-muted border-b border-border">
-        <h3 className="text-sm font-semibold tracking-tight uppercase text-ink">
-          Sections Index
+        <h3 className="text-sm font-semibold tracking-tight text-ink">
+          Browse topics
         </h3>
       </div>
       <div className="p-2 min-h-0 flex-1 overflow-y-auto">
@@ -57,10 +58,13 @@ export default function TopicIndex({
                   <div className="flex items-center w-full">
                     <button
                       onClick={(e) => toggleSection(section.id, e)}
-                      className="p-1 rounded-md flex-shrink-0"
+                      className="cursor-pointer rounded-md p-1 flex-shrink-0"
                       title={
                         isExpanded ? "Collapse subsections" : "Show subsections"
                       }
+                      aria-label={`${isExpanded ? "Collapse" : "Expand"} ${section.title} topics`}
+                      aria-expanded={Boolean(isExpanded)}
+                      aria-controls={`topic-list-${section.id}`}
                     >
                       {isExpanded ? (
                         <ChevronDown className="h-3 w-3 text-ink-faint" />
@@ -70,6 +74,7 @@ export default function TopicIndex({
                     </button>
                     <button
                       onClick={() => handleSectionClick(section.id)}
+                      aria-current={activeSection === section.id ? "location" : undefined}
                       className={`flex-1 text-left px-2 py-2 rounded-lg text-sm transition-all duration-150 flex items-center gap-2 ${
                         activeSection === section.id
                           ? "bg-primary/10 text-primary font-medium"
@@ -96,6 +101,7 @@ export default function TopicIndex({
                 <AnimatePresence>
                   {isExpanded && subs.length > 0 && (
                     <motion.div
+                      id={`topic-list-${section.id}`}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -111,7 +117,14 @@ export default function TopicIndex({
                               delay: subIdx * 0.03,
                               duration: 0.15,
                             }}
-                            onClick={() => handleSubsectionClick(sub.id)}
+                            onClick={() => {
+                              setExpandedSections((prev) => ({
+                                ...prev,
+                                [section.id]: true,
+                              }));
+                              handleSubsectionClick(sub.id);
+                            }}
+                            aria-current={activeSubsection === sub.id ? "location" : undefined}
                             className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-all duration-150 flex items-center gap-2 ${
                               activeSubsection === sub.id
                                 ? "bg-primary/10 text-primary font-medium"

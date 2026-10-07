@@ -38,8 +38,8 @@ const getLangSlug = (item) => {
 
 export default function Header() {
   const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return document.documentElement.classList.contains("dark");
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("darkMode") !== "false";
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -55,12 +55,8 @@ export default function Header() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem("darkMode");
-    if (saved === "true") {
-      setDarkMode(true);
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   const toggleDarkMode = (checked) => {
     setDarkMode(checked);
@@ -259,7 +255,7 @@ export default function Header() {
             <div className="hidden sm:block">
               <div className="text-base font-bold leading-tight tracking-tight">
                 <span>Code</span>
-                <span className="text-primary">Cache</span>
+                <span className="text-primary dark:text-red-400">Cache</span>
               </div>
               <div className="text-[10px] text-ink-faint leading-none font-medium">
                 Recall Code Faster
@@ -366,8 +362,11 @@ export default function Header() {
 
             {/* Theme Toggle */}
             <button
+              type="button"
               onClick={() => toggleDarkMode(!darkMode)}
-              className="p-2 rounded-md bg-muted hover:bg-muted transition-all duration-200"
+              className="cursor-pointer p-2 rounded-md bg-muted hover:bg-muted transition-all duration-200"
+              aria-label={darkMode ? "Switch to light theme" : "Switch to dark theme"}
+              aria-pressed={darkMode}
               title={darkMode ? "Switch to light theme" : "Switch to GitHub dark"}
             >
               {darkMode ? (

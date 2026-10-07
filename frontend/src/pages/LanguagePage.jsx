@@ -2,7 +2,6 @@ import { lazy, Suspense, useState, useEffect, useContext } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
-  Loader2,
   AlertCircle,
   Info,
   Lightbulb,
@@ -12,6 +11,8 @@ import {
   BookOpen,
   Stethoscope,
   X,
+  Layers,
+  Code2,
 } from "lucide-react";
 import { languagesAPI } from "../services/api";
 import { learningAPI } from "../services/api";
@@ -289,6 +290,10 @@ export default function LanguagePage() {
       ),
     0,
   );
+  const totalTopics = sections.reduce(
+    (sum, section) => sum + (section.subsections || []).length,
+    0,
+  );
 
   if (loading) {
     return (
@@ -331,7 +336,7 @@ export default function LanguagePage() {
   }
 
   return (
-    <div className="language-page py-6 md:py-8">
+    <div className="language-page mx-auto max-w-[1600px] py-6 md:py-8">
       {/* Back + Header */}
       <div className="mb-6 md:mb-8">
         <Link
@@ -342,64 +347,80 @@ export default function LanguagePage() {
           All languages
         </Link>
         <div
-          className="language-head-card bg-card rounded-xl p-5 md:p-8 no-hover"
+          className="language-head-card bg-card rounded-2xl p-5 md:p-7 no-hover"
           style={{
             border: "2px solid var(--line)",
             boxShadow: "var(--shadow-primary)",
           }}
         >
-          <div className="flex items-center gap-4">
-            <div
-              className="language-accent-bar w-1.5 h-12 md:h-14 rounded-full flex-shrink-0"
-              style={{ "--language-accent": color }}
-            />
-            <div className="min-w-0">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-ink">
-                {language.name}
-              </h1>
-              <p className="text-sm text-ink-soft mt-1">
-                {sections.length} sections ·{" "}
-                {sections.reduce(
-                  (sum, s) => sum + (s.subsections || []).length,
-                  0,
-                )}{" "}
-                topics · {totalItems} items
-              </p>
-              {language.description && (
-                <p className="text-sm text-ink-soft mt-1 line-clamp-2">
-                  {language.description}
-                </p>
-              )}
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <div
+                className="language-accent-bar h-12 w-1.5 flex-shrink-0 rounded-full md:h-14"
+                style={{ "--language-accent": color }}
+              />
+              <div className="min-w-0">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-ink">
+                  {language.name}
+                </h1>
+                {language.description && (
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">
+                    {language.description}
+                  </p>
+                )}
+              </div>
             </div>
+            <dl className="grid grid-cols-3 gap-2 md:min-w-[18rem]">
+              {[
+                { label: "Sections", value: sections.length, Icon: Layers },
+                { label: "Topics", value: totalTopics, Icon: BookOpen },
+                { label: "Items", value: totalItems, Icon: Code2 },
+              ].map(({ label, value, Icon }) => (
+                <div
+                  key={label}
+                  className="rounded-xl border border-border bg-background/60 px-3 py-3 text-center"
+                >
+                  <dt className="flex items-center justify-center gap-1.5 text-xs text-ink-faint">
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-ink">{value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
+          <p className="mt-5 border-t border-border pt-4 text-sm leading-relaxed text-ink-soft">
+            Start with a topic from the index, then explore explanations,
+            examples, and practice activities as you go.
+          </p>
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:hidden">
+      <div className="mb-5 grid grid-cols-2 gap-3 xl:hidden">
         <Button
           type="button"
           variant="outline"
           onClick={() => setMobilePanel("index")}
-          className="gap-2"
+          className="min-h-11 cursor-pointer justify-center gap-2"
         >
           <BookOpen className="h-4 w-4" />
-          Index
+          Browse topics
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={() => setMobilePanel("doctor")}
-          className="gap-2"
+          className="min-h-11 cursor-pointer justify-center gap-2"
         >
           <Stethoscope className="h-4 w-4" />
-          AI Doctor
+          Ask AI Code Doctor
         </Button>
       </div>
 
       {/* Main Layout — 3 columns: Index | Content | AI Doctor */}
-      <div className="language-workspace grid grid-cols-1 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)_minmax(280px,320px)] gap-6 items-start">
+      <div className="language-workspace grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(240px,280px)_minmax(0,1fr)_minmax(260px,300px)]">
         {/* Left Column — Sections Index, sticky */}
-        <aside className="desktop-side-rail hidden lg:block lg:sticky lg:top-20">
+        <aside id="topic-index" aria-label="Browse learning topics" className="desktop-side-rail sticky top-20 hidden xl:block">
           <TopicIndex
             sections={sections}
             onSectionClick={handleSectionClick}
@@ -410,38 +431,51 @@ export default function LanguagePage() {
         </aside>
 
         {/* Middle Column — Main Content */}
-        <main className="language-content-stream space-y-8 min-w-0">
+        <main aria-label={`${language.name} learning content`} className="language-content-stream min-w-0 space-y-6">
+          <div className="flex items-end justify-between gap-4 border-b border-border pb-4">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-ink">
+                Learning guide
+              </h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                Follow the topics in order or jump to anything you need.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full border border-border bg-card px-3 py-1 text-xs text-ink-faint">
+              {sections.length} {sections.length === 1 ? "section" : "sections"}
+            </span>
+          </div>
           {sections.length > 0 ? (
             sections.slice(0, visibleSectionCount).map((section) => (
-              <div key={section.id} id={`section-${section.id}`}>
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <section key={section.id} id={`section-${section.id}`} className="language-section scroll-mt-24">
+                <h2 className="mb-3 flex items-center gap-2 text-xl font-semibold tracking-tight text-ink">
                   <span
-                    className="language-accent-bar w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    className="language-accent-bar h-2.5 w-2.5 flex-shrink-0 rounded-full"
                     style={{ "--language-accent": color }}
                   />
                   {section.title}
                 </h2>
                 {section.description && (
-                  <p className="text-sm text-ink-soft mb-4 -mt-2 ml-5">
+                  <p className="mb-4 ml-5 text-sm leading-relaxed text-ink-soft">
                     {section.description}
                   </p>
                 )}
 
                 {(section.subsections || []).map((sub) => (
-                  <div
+                  <section
                     key={sub.id}
                     id={`subsection-${sub.id}`}
-                    className="mb-6 ml-2"
+                    className="language-topic mb-4 scroll-mt-24 rounded-xl border border-border bg-card/60 p-4 sm:p-5"
                   >
-                    <h3 className="text-sm font-semibold text-ink mb-3 uppercase tracking-wide">
+                    <h3 className="mb-2 text-base font-semibold tracking-tight text-ink">
                       {sub.title}
                     </h3>
                     {sub.description && (
-                      <p className="text-xs text-ink-faint mb-3 -mt-2">
+                      <p className="mb-4 text-sm leading-relaxed text-ink-soft">
                         {sub.description}
                       </p>
                     )}
-                    <div className="space-y-1 pl-3 border-l-2 border-border">
+                    <div className="space-y-4">
                       {(sub.content_items || []).map((item) => (
                         <ContentRenderer
                           key={item.id}
@@ -452,22 +486,32 @@ export default function LanguagePage() {
                         />
                       ))}
                     </div>
-                  </div>
+                  </section>
                 ))}
-              </div>
+              </section>
             ))
           ) : (
             <div
-              className="content-box bg-card rounded-xl p-12 text-center"
+              className="content-box rounded-2xl border border-border bg-card p-8 text-center sm:p-12"
               style={{
-                border: "2px solid var(--line)",
-                boxShadow: "var(--shadow-primary)",
+                boxShadow: "var(--shadow-secondary)",
               }}
             >
-              <Loader2 className="h-8 w-8 text-ink-faint mx-auto mb-4 animate-spin" />
-              <p className="text-ink-soft">
-                No content available for this language yet.
+              <BookOpen className="mx-auto mb-4 h-9 w-9 text-ink-faint" />
+              <h3 className="text-lg font-semibold text-ink">
+                No lessons available yet
+              </h3>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-soft">
+                There isn’t any learning content for {language.name} yet. Try
+                another language or check back later.
               </p>
+              <Link
+                to="/"
+                className="mt-5 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Explore languages
+              </Link>
             </div>
           )}
           {visibleSectionCount < sections.length ? (
@@ -494,23 +538,31 @@ export default function LanguagePage() {
         </main>
 
         {/* Right Column — AI Code Doctor, sticky */}
-        <aside className="desktop-side-rail hidden lg:block lg:sticky lg:top-20">
+        <aside id="ai-code-doctor-panel" aria-label="AI Code Doctor" className="desktop-side-rail sticky top-20 hidden xl:block">
           <Suspense fallback={<AICodeDoctorSkeleton />}>
             <AICodeDoctor />
           </Suspense>
         </aside>
       </div>
       {mobilePanel ? (
-        <div className="fixed inset-0 z-50 bg-black/50 p-3 lg:hidden">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="language-mobile-panel-title"
+          className="fixed inset-0 z-50 bg-black/60 p-3 backdrop-blur-sm xl:hidden"
+        >
           <div className="h-full rounded-xl bg-card overflow-hidden flex flex-col">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h3 className="text-sm font-bold uppercase tracking-tight">
+            <h3
+              id="language-mobile-panel-title"
+              className="text-sm font-semibold tracking-tight"
+            >
                 {mobilePanel === "index" ? "Sections Index" : "AI Code Doctor"}
               </h3>
               <button
                 type="button"
                 onClick={() => setMobilePanel(null)}
-                className="rounded-md p-1 hover:bg-muted"
+                className="cursor-pointer rounded-md p-2 hover:bg-muted"
                 aria-label="Close panel"
               >
                 <X className="h-4 w-4" />

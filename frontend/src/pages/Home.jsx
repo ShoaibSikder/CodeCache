@@ -80,7 +80,7 @@ export default function Home() {
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 tracking-tight leading-tight">
               <span>Code</span>
-              <span className="text-primary">Cache</span>
+              <span className="text-primary dark:text-red-400">Cache</span>
             </h1>
             <p className="text-ink font-bold text-lg mb-3">
               The Fastest Way to Recall Code
