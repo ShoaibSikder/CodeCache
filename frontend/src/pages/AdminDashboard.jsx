@@ -61,6 +61,22 @@ const adminLoadKeys = [
 const createLoadState = (value) =>
   adminLoadKeys.reduce((state, key) => ({ ...state, [key]: value }), {});
 
+const formatApiValidationErrors = (details, prefix = "") => {
+  if (Array.isArray(details)) {
+    return details
+      .filter((message) => typeof message === "string")
+      .map((message) => (prefix ? `${prefix}: ${message}` : message));
+  }
+
+  if (!details || typeof details !== "object") {
+    return [];
+  }
+
+  return Object.entries(details).flatMap(([field, value]) =>
+    formatApiValidationErrors(value, prefix ? `${prefix}.${field}` : field),
+  );
+};
+
 export default function AdminDashboard() {
   const { user, setUser, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -374,9 +390,11 @@ export default function AdminDashboard() {
       closeForm();
       await fetchAll({ showShell: false });
     } catch (error) {
+      const apiError = error.response?.data?.error;
+      const validationMessages = formatApiValidationErrors(apiError?.details);
       const msg =
-        error.response?.data?.error?.message ||
-        error.response?.data?.error?.details?.slug?.[0] ||
+        validationMessages.join("\n") ||
+        apiError?.message ||
         "Failed to save";
       toast.error(msg);
     } finally {
