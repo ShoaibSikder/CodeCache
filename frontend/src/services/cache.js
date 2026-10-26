@@ -1,92 +1,24 @@
-const memoryCache = new Map();
-
-const DEFAULT_TTL = 5 * 60 * 1000;
-const STORAGE_PREFIX = "codecache:";
-
-function now() {
-  return Date.now();
-}
-
-function readStorage(key) {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_PREFIX + key);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
+// Memory Map + sessionStorage with a 5-minute TTL and stale revalidation (FR31).
+const mem = new Map();
+const TTL = 5 * 60 * 1000;
+export async function cached(key, fetcher, ttl = TTL) {
+  let hit = mem.get(key);
+  if (!hit) { try { hit = JSON.parse(sessionStorage.getItem('cc:' + key)); } catch { /* ignore */ } }
+  if (hit) {
+    mem.set(key, hit);
+    if (Date.now() - hit.t >= ttl) fetcher().then(v => store(key, v)).catch(() => {});
+    return hit.v;
   }
+  const v = await fetcher();
+  store(key, v);
+  return v;
 }
-
-function writeStorage(key, entry) {
-  try {
-    sessionStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(entry));
-  } catch {
-    // Storage can fail in private mode or when quota is full; memory cache still works.
-  }
+function store(key, v) {
+  const rec = { v, t: Date.now() };
+  mem.set(key, rec);
+  try { sessionStorage.setItem('cc:' + key, JSON.stringify(rec)); } catch { /* quota */ }
 }
-
-export function getCached(key) {
-  const memoryEntry = memoryCache.get(key);
-  if (memoryEntry) return memoryEntry;
-
-  const storageEntry = readStorage(key);
-  if (storageEntry) {
-    memoryCache.set(key, storageEntry);
-    return storageEntry;
-  }
-
-  return null;
-}
-
-export function setCached(key, data, ttl = DEFAULT_TTL) {
-  const entry = {
-    data,
-    expiresAt: now() + ttl,
-    savedAt: now(),
-  };
-  memoryCache.set(key, entry);
-  writeStorage(key, entry);
-  return entry;
-}
-
-export function isFresh(entry) {
-  return Boolean(entry && entry.expiresAt > now());
-}
-
-export async function cachedRequest(key, request, options = {}) {
-  const ttl = options.ttl ?? DEFAULT_TTL;
-  const cached = getCached(key);
-
-  if (isFresh(cached)) {
-    return { data: cached.data, fromCache: true };
-  }
-
-  const response = await request();
-  setCached(key, response.data, ttl);
-  return { data: response.data, fromCache: false };
-}
-
-export function revalidateCached(key, request, onData, options = {}) {
-  const ttl = options.ttl ?? DEFAULT_TTL;
-
-  request()
-    .then((response) => {
-      setCached(key, response.data, ttl);
-      onData?.(response.data);
-    })
-    .catch(() => {});
-}
-
-export function clearCacheByPrefix(prefix) {
-  for (const key of memoryCache.keys()) {
-    if (key.startsWith(prefix)) memoryCache.delete(key);
-  }
-
-  try {
-    Object.keys(sessionStorage)
-      .filter((key) => key.startsWith(STORAGE_PREFIX + prefix))
-      .forEach((key) => sessionStorage.removeItem(key));
-  } catch {
-    // Ignore storage access failures.
-  }
+export function invalidate(prefix = '') {
+  [...mem.keys()].filter(k => k.startsWith(prefix)).forEach(k => mem.delete(k));
+  Object.keys(sessionStorage).filter(k => k.startsWith('cc:' + prefix)).forEach(k => sessionStorage.removeItem(k));
 }
