@@ -78,21 +78,29 @@ WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
 # Database — Supabase PostgreSQL (always, no SQLite fallback)
-import urllib.parse
+from urllib.parse import unquote, urlparse
 
 _db_url = os.getenv('DATABASE_URL', '')
 
 if not _db_url:
     raise RuntimeError('DATABASE_URL environment variable is required! Set it in .env')
 
-_db_url = _db_url.replace('postgresql://', 'http://', 1)  # urlparse needs scheme with //
-_parsed = urllib.parse.urlparse(_db_url)
+_parsed = urlparse(_db_url)
+if _parsed.scheme not in ('postgres', 'postgresql'):
+    raise RuntimeError('DATABASE_URL must use the PostgreSQL protocol.')
+
 _db_name = _parsed.path.lstrip('/').split('?')[0]
 _db_host = _parsed.hostname
 _db_port = str(_parsed.port or '5432')
-_db_user = _parsed.username or ''
-# URL-decode the password (handles %40 → @ etc.)
-_db_password = urllib.parse.unquote(_parsed.password) if _parsed.password else ''
+_db_user = unquote(_parsed.username or '')
+_db_password = unquote(_parsed.password or '')
+
+if not _db_host or not (
+    _db_host.endswith('.supabase.co') or _db_host.endswith('.pooler.supabase.com')
+):
+    raise RuntimeError('DATABASE_URL must point to a Supabase PostgreSQL host.')
+if not _db_name or not _db_user:
+    raise RuntimeError('DATABASE_URL must include a database name and username.')
 
 DATABASES = {
     'default': {
@@ -135,10 +143,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
-
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -197,11 +201,16 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True  # For development; set to False in production
 
+# JDoodle Compiler API
+JDOODLE_SETTINGS = {
+    'API_URL': os.getenv('JDOODLE_API_URL', 'https://api.jdoodle.com/v1/execute'),
+    'CLIENT_ID': os.getenv('JDOODLE_CLIENT_ID', ''),
+    'CLIENT_SECRET': os.getenv('JDOODLE_CLIENT_SECRET', ''),
+    'VERSION_INDEX': os.getenv('JDOODLE_VERSION_INDEX', '0'),
+}
+
 # CodeCache Settings
 CODECACHE_SETTINGS = {
-    'JUDGE0_API_URL': os.getenv('JUDGE0_API_URL', 'https://judge0-ce.p.rapidapi.com'),
-    'JUDGE0_API_KEY': os.getenv('JUDGE0_API_KEY', ''),
-    'JUDGE0_API_HOST': os.getenv('JUDGE0_API_HOST', 'judge0-ce.p.rapidapi.com'),
     'DEFAULT_PAGE_SIZE': 20,
     'MAX_PAGE_SIZE': 100,
 }
@@ -210,11 +219,13 @@ CODECACHE_SETTINGS = {
 SUPABASE_URL = os.getenv('SUPABASE_URL', '')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY', '')
 SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'codecache-media')
+STORAGES = {
+    'default': {'BACKEND': 'utils.supabase_storage.SupabaseStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
 
 # ─── Groq AI Configuration ───
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
-GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+GROQ_MODEL = os.getenv('GROQ_MODEL', 'openai/gpt-oss-120b')
 
-# ─── Prisma Configuration ───
-# DATABASE_URL is used by Prisma schema
-# Format: postgresql://user:password@host:port/database
+# Django connects directly to Supabase PostgreSQL through DATABASE_URL.

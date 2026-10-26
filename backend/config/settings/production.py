@@ -21,10 +21,6 @@ SESSION_COOKIE_SECURE = True
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
 CORS_ALLOW_CREDENTIALS = True
 
-# Database (Supabase PostgreSQL - same DATABASE_URL from base.py)
-# SSL is required for Supabase connections
-DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
-
 # Logging
 LOGGING = {
     'version': 1,
