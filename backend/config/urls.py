@@ -8,8 +8,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 import json
-import os
 from groq import Groq
 
 
@@ -46,7 +46,7 @@ def ai_code_doctor(request):
                 'data': None
             }, status=400)
 
-        groq_api_key = os.getenv('GROQ_API_KEY', '')
+        groq_api_key = settings.GROQ_API_KEY
         if not groq_api_key:
             return JsonResponse({
                 'success': False,
@@ -70,7 +70,7 @@ def ai_code_doctor(request):
         user_prompt = f"Language: {language}\n\nCode:\n```\n{code}\n```\n\nPlease analyze this code."
 
         completion = client.chat.completions.create(
-            model=os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+            model=settings.GROQ_MODEL,
             messages=[
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_prompt}
@@ -121,7 +121,7 @@ def ai_generate_quiz(request):
         language = body.get('language', 'programming').strip() or 'programming'
         topic = body.get('topic', '').strip()
 
-        groq_api_key = os.getenv('GROQ_API_KEY', '')
+        groq_api_key = settings.GROQ_API_KEY
         if not groq_api_key:
             return JsonResponse({
                 'success': False,
@@ -140,7 +140,7 @@ def ai_generate_quiz(request):
         )
 
         completion = client.chat.completions.create(
-            model=os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+            model=settings.GROQ_MODEL,
             messages=[
                 {'role': 'system', 'content': 'You generate concise valid JSON only.'},
                 {'role': 'user', 'content': prompt}
@@ -195,5 +195,4 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
