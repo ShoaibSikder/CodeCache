@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView
 from django.contrib.auth import get_user_model
+from apps.common.constants import UserRole
+from apps.common.permissions import IsSuperAdmin
 
 from .serializers import (
     UserSerializer,
@@ -238,3 +240,68 @@ class UserListView(APIView):
             'success': True,
             'data': serializer.data
         })
+
+
+class AdminUserDetailView(APIView):
+    """Allow super-admins to change account roles and activation status."""
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
+
+    def patch(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': {'code': status.HTTP_404_NOT_FOUND, 'message': 'User not found.'},
+                'data': None,
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        changes = {}
+        if 'role' in request.data:
+            role = request.data['role']
+            valid_roles = {value for value, _label in UserRole.CHOICES}
+            if role not in valid_roles:
+                return Response({
+                    'success': False,
+                    'error': {'code': status.HTTP_400_BAD_REQUEST, 'message': 'Invalid user role.'},
+                    'data': None,
+                }, status=status.HTTP_400_BAD_REQUEST)
+            changes['role'] = role
+
+        if 'is_active' in request.data:
+            is_active = request.data['is_active']
+            if not isinstance(is_active, bool):
+                return Response({
+                    'success': False,
+                    'error': {'code': status.HTTP_400_BAD_REQUEST, 'message': 'is_active must be a boolean.'},
+                    'data': None,
+                }, status=status.HTTP_400_BAD_REQUEST)
+            changes['is_active'] = is_active
+
+        if not changes:
+            return Response({
+                'success': False,
+                'error': {'code': status.HTTP_400_BAD_REQUEST, 'message': 'Provide a role or is_active update.'},
+                'data': None,
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if user.pk == request.user.pk and (
+            changes.get('is_active') is False
+            or changes.get('role', user.role) != user.role
+        ):
+            return Response({
+                'success': False,
+                'error': {'code': status.HTTP_400_BAD_REQUEST, 'message': 'You cannot change your own role or deactivate your account.'},
+                'data': None,
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        for key, value in changes.items():
+            setattr(user, key, value)
+        if 'role' in changes:
+            user.is_staff = changes['role'] in (UserRole.ADMIN, UserRole.SUPER_ADMIN)
+            user.is_superuser = changes['role'] == UserRole.SUPER_ADMIN
+        update_fields = list(changes)
+        if 'role' in changes:
+            update_fields.extend(['is_staff', 'is_superuser'])
+        user.save(update_fields=update_fields)
+        return Response({'success': True, 'data': UserSerializer(user).data})
