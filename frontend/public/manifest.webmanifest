@@ -1,0 +1,17 @@
+{
+  "name": "CodeCache",
+  "short_name": "CodeCache",
+  "description": "The Fastest Way to Recall Code",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f7f4",
+  "theme_color": "#2447f5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
