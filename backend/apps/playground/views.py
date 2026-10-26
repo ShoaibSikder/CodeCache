@@ -1,249 +1,152 @@
-"""
-Playground views for CodeCache - Judge0 integration.
-"""
+"""Code playground backed by the JDoodle Compiler API."""
 
-import os
 import requests
-import base64
 
+from django.conf import settings
 from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import CodeExecution, SupportedLanguage
+from .models import CodeExecution
 
 
-# Judge0 language mapping
-JUDGE0_LANGUAGES = {
-    'python': 71,      # Python 3.8
-    'python3': 71,
-    'javascript': 63,  # Node.js
-    'js': 63,
-    'java': 62,        # Java 13
-    'cpp': 54,         # C++ GCC 9.2.0
-    'c': 50,           # C GCC 9.2.0
-    'csharp': 51,      # C# Mono
-    'go': 60,          # Go 1.13.3
-    'ruby': 72,        # Ruby 2.7.0
-    'rust': 73,        # Rust 1.40.0
-    'php': 68,         # PHP 7.4.1
-    'swift': 83,       # Swift 5.1
-    'kotlin': 78,      # Kotlin 1.3.70
-    'typescript': 74,  # TypeScript 3.7.4
-    'ts': 74,
-    'sql': 82,         # SQLite 3.27.2
+JDOODLE_LANGUAGES = {
+    'python': 'python3',
+    'javascript': 'nodejs',
+    'java': 'java',
+    'cpp': 'cpp',
+    'c': 'c',
+    'csharp': 'csharp',
+    'go': 'go',
+    'ruby': 'ruby',
+    'rust': 'rust',
+    'php': 'php',
+    'swift': 'swift',
+    'kotlin': 'kotlin',
+    'typescript': 'typescript',
+    'sql': 'sql',
 }
+LANGUAGE_ALIASES = {'python3': 'python', 'js': 'javascript', 'ts': 'typescript'}
+MAX_CODE_LENGTH = 40_000
+MAX_STDIN_LENGTH = 10_000
+
+
+def jdoodle_failure_message(http_status, provider_error=''):
+    if http_status == 401 or http_status == 403:
+        return 'JDoodle rejected the credentials. Check JDOODLE_CLIENT_ID and JDOODLE_CLIENT_SECRET.'
+    if http_status == 429:
+        return 'JDoodle daily execution credits or rate limit have been reached.'
+    if http_status and http_status >= 500:
+        return 'JDoodle is temporarily unavailable. Try again shortly.'
+    if provider_error:
+        return str(provider_error)[:300]
+    return 'JDoodle could not execute this request. Check the language and API configuration.'
 
 
 class RunCodeView(APIView):
-    """
-    POST /api/v1/playground/run/
-    Execute code using Judge0 API.
-    """
+    """POST /api/v1/playground/run/"""
     permission_classes = [AllowAny]
 
     def post(self, request):
         data = request.data
-        language = data.get('language', '').lower().strip()
-        code = data.get('code', '')
+        language = str(data.get('language', '')).lower().strip()
+        language = LANGUAGE_ALIASES.get(language, language)
+        code = data.get('code', data.get('script', ''))
         stdin = data.get('stdin', '')
 
-        if not language:
+        if not isinstance(code, str) or not code.strip():
+            return Response({'success': False, 'error': {'code': 400, 'message': 'Code is required.'}, 'data': None}, status=400)
+        if len(code) > MAX_CODE_LENGTH or not isinstance(stdin, str) or len(stdin) > MAX_STDIN_LENGTH:
+            return Response({'success': False, 'error': {'code': 400, 'message': 'Code or standard input exceeds the allowed size.'}, 'data': None}, status=400)
+        jdoodle_language = JDOODLE_LANGUAGES.get(language)
+        if not jdoodle_language:
+            return Response({'success': False, 'error': {'code': 400, 'message': f'Unsupported language: {language}.'}, 'data': None}, status=400)
+
+        config = settings.JDOODLE_SETTINGS
+        client_id = config['CLIENT_ID']
+        client_secret = config['CLIENT_SECRET']
+        if not client_id or not client_secret:
             return Response({
                 'success': False,
-                'error': {
-                    'code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'Language is required.'
-                },
-                'data': None
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'error': {'code': 503, 'message': 'JDoodle is not configured. Add its client ID and secret to backend/.env.'},
+                'data': None,
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if not code:
-            return Response({
-                'success': False,
-                'error': {
-                    'code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'Code is required.'
-                },
-                'data': None
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Get Judge0 language ID
-        judge0_lang_id = JUDGE0_LANGUAGES.get(language)
-        if not judge0_lang_id:
-            return Response({
-                'success': False,
-                'error': {
-                    'code': status.HTTP_400_BAD_REQUEST,
-                    'message': f'Unsupported language: {language}. Supported: {", ".join(JUDGE0_LANGUAGES.keys())}'
-                },
-                'data': None
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Get Judge0 API credentials from settings
-        judge0_url = os.getenv('JUDGE0_API_URL', 'https://judge0-ce.p.rapidapi.com')
-        api_key = os.getenv('JUDGE0_API_KEY', '')
-        api_host = os.getenv('JUDGE0_API_HOST', 'judge0-ce.p.rapidapi.com')
-
-        # Prepare the submission
-        encoded_code = base64.b64encode(code.encode('utf-8')).decode('utf-8')
-        encoded_stdin = base64.b64encode(stdin.encode('utf-8')).decode('utf-8') if stdin else None
-
-        submission_data = {
-            'language_id': judge0_lang_id,
-            'source_code': encoded_code,
-            'stdin': encoded_stdin or '',
+        execution = CodeExecution.objects.create(language=language, code=code, status='submitted')
+        payload = {
+            'clientId': client_id,
+            'clientSecret': client_secret,
+            'script': code,
+            'language': jdoodle_language,
+            'versionIndex': str(config['VERSION_INDEX']),
+            'stdin': stdin,
         }
-
-        # Create execution record
-        execution = CodeExecution.objects.create(
-            language=language,
-            code=code,
-            status='submitted'
-        )
-
-        # Headers for Judge0 API
-        headers = {
-            'content-type': 'application/json',
-        }
-
-        if api_key:
-            headers['X-RapidAPI-Key'] = api_key
-        if api_host:
-            headers['X-RapidAPI-Host'] = api_host
 
         try:
-            # Submit code to Judge0
-            submit_url = f"{judge0_url}/submissions"
-            submit_response = requests.post(
-                submit_url,
-                json=submission_data,
-                headers=headers,
-                params={'base64_encoded': 'true', 'wait': 'true'},
-                timeout=30
-            )
+            response = requests.post(config['API_URL'], json=payload, timeout=30)
+            try:
+                result = response.json()
+            except ValueError:
+                result = {}
 
-            if submit_response.status_code != 201:
+            provider_error = result.get('error') if isinstance(result, dict) else ''
+            if response.status_code != 200 or provider_error:
+                message = jdoodle_failure_message(response.status_code, provider_error)
                 execution.status = 'failed'
-                execution.error = f"Judge0 submission failed: {submit_response.text}"
+                execution.error = message
                 execution.save()
-                return Response({
-                    'success': False,
-                    'error': {
-                        'code': status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        'message': 'Code execution service unavailable.',
-                        'details': submit_response.text
-                    },
-                    'data': None
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                error_code = status.HTTP_429_TOO_MANY_REQUESTS if response.status_code == 429 else status.HTTP_502_BAD_GATEWAY
+                return Response({'success': False, 'error': {'code': error_code, 'message': message}, 'data': None}, status=error_code)
 
-            result = submit_response.json()
-
-            # Decode the output
-            output = ''
-            error_output = ''
-            compile_output = ''
-
-            if result.get('stdout'):
-                output = base64.b64decode(result['stdout']).decode('utf-8', errors='replace')
-            if result.get('stderr'):
-                error_output = base64.b64decode(result['stderr']).decode('utf-8', errors='replace')
-            if result.get('compile_output'):
-                compile_output = base64.b64decode(result['compile_output']).decode('utf-8', errors='replace')
-
-            # Update execution record
-            execution.status = result.get('status', {}).get('description', 'completed').lower()
+            output = result.get('output', '')
+            execution.status = 'completed'
             execution.output = output
-            execution.error = error_output or compile_output
-            execution.execution_time = result.get('time')
-            execution.memory_used = result.get('memory')
-            execution.judge0_token = result.get('token', '')
+            execution.execution_time = _as_float(result.get('cpuTime'))
+            execution.memory_used = _as_int(result.get('memory'))
             execution.save()
-
             return Response({
                 'success': True,
                 'data': {
                     'output': output,
-                    'error': error_output or compile_output,
-                    'execution_time': result.get('time'),
+                    'error': '',
+                    'execution_time': result.get('cpuTime'),
                     'memory_used': result.get('memory'),
-                    'status': result.get('status', {}).get('description', 'Completed'),
-                }
+                    'status': 'Completed',
+                    'exit_code': result.get('statusCode'),
+                },
             })
-
-        except requests.RequestException as e:
+        except requests.RequestException:
             execution.status = 'failed'
-            execution.error = str(e)
+            execution.error = 'Could not reach JDoodle.'
             execution.save()
             return Response({
                 'success': False,
-                'error': {
-                    'code': status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    'message': 'Failed to execute code.',
-                    'details': str(e)
-                },
-                'data': None
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                'error': {'code': 502, 'message': 'Could not reach JDoodle. Check the backend network connection and try again.'},
+                'data': None,
+            }, status=status.HTTP_502_BAD_GATEWAY)
+
+
+def _as_float(value):
+    try:
+        return float(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _as_int(value):
+    try:
+        return int(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 class SupportedLanguagesView(APIView):
-    """
-    GET /api/v1/playground/languages/
-    Get list of supported playground languages.
-    """
+    """GET /api/v1/playground/languages/"""
     permission_classes = [AllowAny]
 
     def get(self, request):
-        languages = [
-            {'id': lang_id, 'name': name}
-            for name, lang_id in JUDGE0_LANGUAGES.items()
-        ]
-
-        # Remove duplicates (e.g., 'python' and 'python3')
-        seen = set()
-        unique_languages = []
-        for lang in languages:
-            if lang['id'] not in seen:
-                seen.add(lang['id'])
-                unique_languages.append(lang)
-
         return Response({
             'success': True,
-            'data': unique_languages
-        })
-
-
-class ExecutionStatusView(APIView):
-    """
-    GET /api/v1/playground/status/{token}/
-    Get the status of a code execution.
-    """
-    permission_classes = [AllowAny]
-
-    def get(self, request, token):
-        try:
-            execution = CodeExecution.objects.get(judge0_token=token)
-        except CodeExecution.DoesNotExist:
-            return Response({
-                'success': False,
-                'error': {
-                    'code': status.HTTP_404_NOT_FOUND,
-                    'message': 'Execution not found.'
-                },
-                'data': None
-            }, status=status.HTTP_404_NOT_FOUND)
-
-        return Response({
-            'success': True,
-            'data': {
-                'id': str(execution.id),
-                'language': execution.language,
-                'status': execution.status,
-                'output': execution.output,
-                'error': execution.error,
-                'execution_time': execution.execution_time,
-                'memory_used': execution.memory_used,
-                'created_at': execution.created_at.isoformat(),
-            }
+            'data': [{'id': name, 'name': name} for name in JDOODLE_LANGUAGES],
         })
